@@ -1,12 +1,13 @@
 import './App.css'
 import MainPage from './mainPage.tsx'
+import Login from './login.tsx'
 
 function App() {
   
 
   return (
     <>
-      <MainPage />
+      <Login />
     </>
   )
 }
