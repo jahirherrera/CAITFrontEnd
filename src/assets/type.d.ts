@@ -12,3 +12,24 @@ export interface GroupDetails {
     name: string;
     user_username : string;
 }
+
+export interface Question {
+    id: number | null;
+    description: string;
+    answer: string;
+    groupId: number;
+}
+
+export interface ImageQuestion{
+    file : FormData;
+    groupId : number;
+}
+
+export interface ImageQuestionResponse{
+    id: number;
+    groupId: number;
+    url: string;
+}
+
+
+

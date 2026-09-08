@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import type { Group,GroupDetails } from './assets/type';
+import type { Group, GroupDetails } from './assets/type';
+import ShowQues from './showQues.tsx';
 
 
 
@@ -9,6 +10,9 @@ export default function MainPage() {
   const [addGroup, setAddGroup] = useState<boolean>(false);
 
   const [newGroupName, setNewGroupName] = useState<string>("");
+
+  const [selectedGroupId, setSelectedGroupId] = useState<number>(0);
+  const [activeQuestions, setActiveQuestions] = useState<boolean>(false);
 
   const [activeSection, setActiveSection] = useState<number>(0);
   const username = localStorage.getItem("username");
@@ -81,25 +85,42 @@ export default function MainPage() {
         throw new Error("Could not fetch groups.");
       }
       const groupsData = await response.json();
-      console.log("Fetched groups:", groupsData);
       setGroups(groupsData);
 
     } catch (error) {
       console.error("Fetching groups failed", error);
     }
   }
+
+  const goToQuestions = (groupId: number) => {
+    setSelectedGroupId(groupId);
+  }
+
+  useEffect(() => {
+    if (selectedGroupId !== 0) {
+      setActiveSection(1);
+      setActiveQuestions(true);
+    }
+  }, [selectedGroupId]);
+
   return (
-    <div className="flex flex-col  h-screen w-full">
-      <section className="flex flex-row  items-end gap-5 justify-center h-1/10 w-full bg-white">
-        <div className={`text-lg font-bold  p-1.5 rounded-t-xl ${activeSection === 0 ? 'bg-gray-200' : ''}`} onClick={() => setActiveSection(0)}>Group</div>
-        <div className={`text-lg font-bold rounded-t-xl p-1.5 ${activeSection === 1 ? 'bg-gray-200 ' : ''}`} onClick={() => setActiveSection(1)}>Questions</div>
-        <div className={`text-lg font-bold rounded-t-xl p-1.5 ${activeSection === 2 ? 'bg-gray-200 ' : ''}`} onClick={() => setActiveSection(2)}>Test</div>
-        <div className={`text-lg font-bold rounded-t-xl p-1.5 ${activeSection === 3 ? 'bg-gray-200 ' : ''}`} onClick={() => setActiveSection(3)}>Setting</div>
+    <div className="flex flex-col  h-vh w-full">
+      <section className="flex flex-row  items-end gap-5 justify-center h-auto w-full bg-white mt-5">
+        <div className={`text-lg font-bold  p-1.5 rounded-t-xl ${activeSection === 0 ? 'bg-gray-200' : ''}`} onClick={() => { setActiveSection(0); setActiveQuestions(false); setSelectedGroupId(0); }} >Group</div>
+        <div className={`text-lg font-bold rounded-t-xl p-1.5 ${activeSection === 1 ? 'bg-gray-200 ' : ''}`} >Questions</div>
+        <div className={`text-lg font-bold rounded-t-xl p-1.5 ${activeSection === 2 ? 'bg-gray-200 ' : ''}`} >Test</div>
+        <div className={`text-lg font-bold rounded-t-xl p-1.5 ${activeSection === 3 ? 'bg-gray-200 ' : ''}`} >Setting</div>
       </section>
-      <section className="flex flex-col items-center justify-start h-9/10 w-full bg-gray-200 p-15">
+      {!activeQuestions && <section className="flex flex-col items-center justify-start h-screen w-full bg-gray-200 p-8">
         {groups.map((group) => (
-          <div key={group.id} className="flex flex-row items-center justify-between border-2 h-20 min-h-10 min-w-100 border-gray-300 p-6 pl-6 rounded-lg shadow-2xl mb-4">
-            <h2 className="text-xl font-bold mb-2 hover:cursor-pointer">{group.name}</h2>
+          <div key={group.id} className="flex flex-row items-center justify-between border-2 h-25  min-w-100 border-gray-300 p-6 pl-6 rounded-lg shadow-2xl mb-4">
+            <div>
+              <h2 className="text-xl font-bold mb-2 hover:cursor-pointer" onClick={() => goToQuestions(group.id)}>
+                {group.name}
+              </h2>
+              <h4 className="text-xs text-gray-600">Next review at...</h4>
+            </div>
+
             <button className="text-xl font-bold hover:cursor-pointer" onClick={() => deleteGroup(group.id)}>-</button>
           </div>
         ))}
@@ -109,13 +130,17 @@ export default function MainPage() {
           +
         </button>
       </section>
+      }
+      {
+        activeQuestions && <ShowQues groupId={selectedGroupId} />
+      }
       {
         addGroup && (
           <div className={`fixed top-0 left-0 w-full h-full bg-gray-700/80 flex justify-center items-center text-white  `}>
             <div className=" w-full max-w-sm h-40 min-h-35 p-6 bg-gray-200 text-black rounded-xl shadow-xl border border-gray-400 flex flex-col items-center justify-between ">
               <div className="flex flex-row items-center justify-center gap-1">
                 <h2 className="text-xl font-bold mb-2">New Group</h2>
-                <input type="text" placeholder="Group Name" className="border border-gray-300 rounded p-2 ml-2" value={newGroupName} onChange={(e : React.ChangeEvent<HTMLInputElement>) => setNewGroupName(e.target.value)} />
+                <input type="text" placeholder="Group Name" className="border border-gray-300 rounded p-2 ml-2" value={newGroupName} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewGroupName(e.target.value)} />
               </div>
               <div className="flex flex-row items-center justify-center gap-4">
                 <button className="bg-blue-500 text-white py-1 px-2 rounded" onClick={addNewGroup}>Save</button>
