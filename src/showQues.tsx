@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import type { Question, ImageQuestion, ImageQuestionResponse } from "./assets/type";
 import ImageEditing from './imageEditing.tsx'
+//@ts-ignore
+import sprite from './assets/sprite.svg';
 
 
 
@@ -16,7 +18,7 @@ export default function ShowQues({ groupId }: { groupId: number }) {
     const [wholeQuestion, setWholeQuestion] = useState<string>("");
 
     const [clickImage, setClickImage] = useState<boolean>(false);
-    const [imageClicked,setImageClicked] = useState<ImageQuestionResponse | null>(null);
+    const [imageClicked, setImageClicked] = useState<ImageQuestionResponse | null>(null);
 
 
 
@@ -184,11 +186,33 @@ export default function ShowQues({ groupId }: { groupId: number }) {
             setImage(null);
             setAspectRatio(null);
             getQuestions();
+            getImages();
 
         } catch (error) {
             console.error("Adding image question failed", error);
         }
     };
+
+    const deleteImage = async (id: number) => {
+
+        try {
+            const response = await fetch(`http://localhost:8080/image/${id}`, {
+                method: "DELETE",
+                credentials: "include",
+                headers: {
+                    "Content-Type": "application/json"
+                }
+            });
+            if (!response.ok) {
+                throw new Error("Could not delete the image.");
+            }
+
+            getImages();
+
+        } catch (error) {
+            console.error("operation failed", error);
+        }
+    }
 
     const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         //@ts-ignore
@@ -196,13 +220,16 @@ export default function ShowQues({ groupId }: { groupId: number }) {
 
         if (!file) return;
 
+
         const nameofFile = file.name;
         const lastFour = nameofFile.substring(nameofFile.length - 4).toLowerCase();
         const lastFive = nameofFile.substring(nameofFile.length - 5).toLowerCase();
 
-        if (lastFour === ".jpg" || lastFour === ".png" || lastFour === ".mov" || lastFour === ".webp" || lastFive === ".jpeg") {
+        if (lastFour === ".jpg" || lastFour === ".png" || lastFour === ".mov" || lastFive === ".webp" || lastFive === ".jpeg") {
             setFile(file);
             const imageUrl = URL.createObjectURL(file);
+
+
             setImage(imageUrl);
 
             const img = new Image();
@@ -215,12 +242,13 @@ export default function ShowQues({ groupId }: { groupId: number }) {
         }
     }
 
-    const clickingImage=(image : ImageQuestionResponse)=>{
+    const clickingImage = (image: ImageQuestionResponse) => {
+
         setImageClicked(image);
     }
 
     useEffect(() => {
-        if(!imageClicked) return;
+        if (!imageClicked) return;
 
         setClickImage(true)
 
@@ -229,48 +257,57 @@ export default function ShowQues({ groupId }: { groupId: number }) {
     return (
         <>
             {
-                !clickImage && <div className="flex flex-col items-center justify-start h-9/10 w-full bg-gray-200 p-15">
-                {questions.map((question) => (
-                    <div key={question.id} className="flex flex-row items-start justify-between border-2 h-auto  w-[50vw] border-gray-300 p-6 pl-6 rounded-lg shadow-2xl mb-4">
+                !clickImage && <div className="flex flex-col items-center justify-start h-auto w-full bg-gray-200 p-15">
+                    {questions.map((question) => (
+                        <div key={question.id} className="flex flex-row items-start justify-between border-2 h-auto  w-[50vw] border-gray-300 p-6 pl-6 rounded-lg shadow-2xl mb-4 hover:cursor-pointer">
 
-                        <div>
-                            <h3 className="text-2xl ">{question.description}</h3>
-                            <p className="text-xl text-gray-600">{question.answer}</p>
+                            <div>
+                                <h3 className="text-2xl ">{question.description}</h3>
+                                <p className="text-xl text-gray-600">{question.answer}</p>
+                            </div>
+                            <button className="  pl-3 ml-2 border-l"><svg
+                                className="w-6 h-6 text-black hover:cursor-pointer"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                strokeWidth="2"
+                                onClick={() => deleteQuestion(question.id)}
+                            >
+                                <use href={`${sprite}#trash`} />
+                            </svg></button>
                         </div>
-                        <button className=" text-xl font-bold hover:cursor-pointer pl-3 ml-2 border-l" onClick={() => deleteQuestion(question.id)}>-</button>
-                    </div>
 
-                ))}
-                {imageQuestions.map((imageQuestion) => (
-                    <img
-                        key={imageQuestion.id}
-                        src={imageQuestion.url}
-                        alt="Question illustration"
-                        className="w-[50vw] h-auto object-cover border border-gray-300 rounded-lg shadow-2xl mb-4"
-                        onClick={()=>clickingImage(imageQuestion)}
-                    />
-                ))}
+                    ))}
+                    {imageQuestions.map((imageQuestion) => (
+                        <img
+                            key={imageQuestion.id}
+                            src={imageQuestion.url}
+                            alt="Question illustration"
+                            className="w-[50vw] h-auto object-cover border border-gray-300 rounded-lg shadow-2xl mb-4 hover:cursor-pointer"
+                            onClick={() => clickingImage(imageQuestion)}
+                            onContextMenu={(e) => { e.preventDefault(); deleteImage(imageQuestion.id) }}
+                        />
+                    ))}
 
-                <button className="flex items-center justify-center  border border-gray-400 shadow-2xl  hover:shadow-lg hover:scale-105 transition duration-200  rounded-full text-sm h-10 w-10 hover:cursor-pointer min-w-7 min-h-7 "
-                    onClick={() => {
-                        setAddQues(true);
-                    }}
-                >
-                    +
-                </button>
-                <button className="flex items-center justify-center  border border-gray-400 shadow-2xl  hover:shadow-lg hover:scale-105 transition duration-200  rounded-full text-sm h-10 w-10 hover:cursor-pointer min-w-7 min-h-7 "
-                    onClick={() => {
-                        setAddFile(true);
-                    }}
-                >
-                    FILE
-                </button>
+                    <button className="flex items-center justify-center  border border-gray-400 shadow-2xl  hover:shadow-lg hover:scale-105 transition duration-200  rounded-full text-sm h-10 w-10 hover:cursor-pointer min-w-7 min-h-7 "
+                        onClick={() => {
+                            setAddQues(true);
+                        }}
+                    >
+                        +
+                    </button>
+                    <button className="flex items-center justify-center  border border-gray-400 shadow-2xl  hover:shadow-lg hover:scale-105 transition duration-200  rounded-full text-sm h-10 w-10 hover:cursor-pointer min-w-7 min-h-7 "
+                        onClick={() => {
+                            setAddFile(true);
+                        }}
+                    >
+                        FILE
+                    </button>
 
-            </div>
+                </div>
             }
 
             {
-                clickImage && imageClicked && <ImageEditing image={imageClicked}/>
+                clickImage && imageClicked && <ImageEditing image={imageClicked} />
             }
 
 

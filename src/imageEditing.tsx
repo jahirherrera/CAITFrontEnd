@@ -1,17 +1,37 @@
-import type { ImageQuestionResponse } from "./assets/type";
+import type { ImageQuestionResponse, rectangleDTO,Rectangle } from "./assets/type";
 import { useEffect, useRef, useState } from "react";
 
-type Rectangle = {
-    x: number;
-    y: number;
-    width: number;
-    height: number;
-};
+
 
 export default function ImageEditing({ image }: { image: ImageQuestionResponse }) {
 
-    const divRef = useRef<HTMLImageElement>(null);
 
+    useEffect(() => {
+        getRectangles();
+    }, [])
+
+    const getRectangles = async () => {
+        try {
+            const response = await fetch(`http://localhost:8080/rectangle/${image.id}`, {
+                method: "GET",
+                credentials: "include",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+            });
+            if (!response.ok) {
+                throw new Error("Could not get the Squares");
+            }
+            const r = await response.json();
+            setRecFromDtaBase(r);
+        }
+        catch (error) {
+            console.error("operation failed", error);
+        }
+    }
+
+
+    const divRef = useRef<HTMLImageElement>(null);
 
     const [drawing, setDrawing] = useState<boolean>(false);
 
@@ -29,13 +49,12 @@ export default function ImageEditing({ image }: { image: ImageQuestionResponse }
 
     const [rectData, setRectData] = useState<Rectangle[]>([]);
 
-
-
+    const [recFromDtaBase, setRecFromDtaBase] = useState<rectangleDTO[]>([]);
 
 
     const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
 
-        if(!divRef.current) return;
+        if (!divRef.current) return;
 
         const div = divRef.current;
 
@@ -50,11 +69,6 @@ export default function ImageEditing({ image }: { image: ImageQuestionResponse }
             return;
         }
 
-
-        console.log("Mouse X: " + e.clientX);
-        console.log("Mouse Y: " + e.clientY);
-        console.log("Div X: " + rect.left);
-        console.log("Div y: " + rect.top);
 
         setPosX(rect.left);
         setPosY(rect.top);
@@ -77,11 +91,11 @@ export default function ImageEditing({ image }: { image: ImageQuestionResponse }
     };
 
     const handleMouseUp = () => {
-        if (!currentRectangle) return; 
+        if (!currentRectangle) return;
 
         const newRect: Rectangle = {
-            x: currentRectangle.x-posX,
-            y: currentRectangle.y-posY,
+            x: currentRectangle.x - posX,
+            y: currentRectangle.y - posY,
             width: currentRectangle.width,
             height: currentRectangle.height
         }
@@ -106,11 +120,6 @@ export default function ImageEditing({ image }: { image: ImageQuestionResponse }
         if (!drawing) return;
 
 
-
-
-        // const currentX = e.clientX - rect.left;
-        // const currentY = e.clientY - rect.top;
-
         const currentX = e.clientX;
         const currentY = e.clientY;
 
@@ -123,7 +132,64 @@ export default function ImageEditing({ image }: { image: ImageQuestionResponse }
         });
     };
 
+    const saveRectangles = async () => {
 
+        if(rectData==null) return;
+
+        const rect: rectangleDTO[] = [];
+
+        for (const rectangles of rectData) {
+            const newRectangle: rectangleDTO = {
+                id: 0,
+                x: rectangles.x,
+                y: rectangles.y,
+                width: rectangles.width,
+                height: rectangles.height,
+                id_image: image.id
+            }
+            rect.push(newRectangle)
+        }
+
+        try {
+            const response = await fetch(`http://localhost:8080/rectangle`, {
+                method: "POST",
+                credentials: "include",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(rect)
+            });
+            if (!response.ok) {
+                throw new Error("Could not add the Squares");
+            }
+            getRectangles();
+            setRectData([]);
+            setRectangles([]);
+        }
+        catch (error) {
+            console.error("operation failed", error);
+        }
+    }
+
+    const deleteRectangleFromDatabase = async (id: number) => {
+        try {
+            const response = await fetch(`http://localhost:8080/rectangle/${id}`, {
+                method: "DELETE",
+                credentials: "include",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+            });
+            if (!response.ok) {
+                throw new Error("Could not delete the Square");
+            }
+            getRectangles();
+
+        }
+        catch (error) {
+            console.error("operation failed", error);
+        }
+    }
 
 
     return (
@@ -131,10 +197,10 @@ export default function ImageEditing({ image }: { image: ImageQuestionResponse }
         <>
 
 
-            <div className="flex flex-col items-center justify-start h-screen w-full bg-gray-200 p-15">
+            <div className="flex flex-col items-center justify-start h-auto w-full bg-gray-200 p-15">
                 <div
                     ref={divRef}
-                    className="w-fit border border-gray-300 rounded-lg shadow-2xl mb-4"
+                    className="relative w-fit border border-gray-300 rounded-lg shadow-2xl mb-4"
                     onMouseDown={handleMouseDown}
                     onMouseUp={handleMouseUp}
                     onMouseMove={handleMouseMove}
@@ -142,13 +208,30 @@ export default function ImageEditing({ image }: { image: ImageQuestionResponse }
                 >
                     <img
                         src={image.url}
-                        className="h-[80dvh] w-auto block rounded-lg"
+                        className="h-[70dvh] w-auto block rounded-lg"
                     />
+                    {recFromDtaBase.map((rectangle, col) => (
+                        <div
+                            key={col}
+                            onMouseDown={(e) => e.stopPropagation()}
+                            onMouseUp={(e) => e.stopPropagation()}
+                            onClick={(e) => {e.stopPropagation;deleteRectangleFromDatabase(rectangle.id)}}
+                            className="absolute border-2 border-red-500 bg-red-500 flex items-center justify-center"
+                            style={{
+                                left: rectangle.x,
+                                top: rectangle.y,
+                                width: rectangle.width,
+                                height: rectangle.height,
+                            }}
+                        >{col + 1}</div>
+                    )
+                    )}
                 </div>
                 {rectangles.map((rectangle, index) => (
                     <div
                         key={index}
                         className="absolute border-2 border-blue-500 bg-blue-500"
+
                         style={{
                             left: rectangle.x,
                             top: rectangle.y,
@@ -168,7 +251,7 @@ export default function ImageEditing({ image }: { image: ImageQuestionResponse }
                         }}
                     />
                 )}
-                <button className="bg-blue-600 hover:bg-blue-700 w-40 text-white font-bold py-2 px-4 rounded-full" onClick={()=>console.log(rectData)}>Save Changes</button>
+                <button className="bg-blue-600 hover:bg-blue-700 w-40 text-white font-bold py-2 px-4 rounded-full" onClick={saveRectangles}>Save Changes</button>
             </div>
 
 

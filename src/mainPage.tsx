@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import type { Group, GroupDetails } from './assets/type';
 import ShowQues from './showQues.tsx';
+//@ts-ignore
+import sprite from './assets/sprite.svg';
 
 
 
@@ -104,14 +106,14 @@ export default function MainPage() {
   }, [selectedGroupId]);
 
   return (
-    <div className="flex flex-col  h-vh w-full">
+    <div className="grid grid-rows-[1fr_11fr] h-screen w-full ">
       <section className="flex flex-row  items-end gap-5 justify-center h-auto w-full bg-white mt-5">
         <div className={`text-lg font-bold  p-1.5 rounded-t-xl ${activeSection === 0 ? 'bg-gray-200' : ''}`} onClick={() => { setActiveSection(0); setActiveQuestions(false); setSelectedGroupId(0); }} >Group</div>
         <div className={`text-lg font-bold rounded-t-xl p-1.5 ${activeSection === 1 ? 'bg-gray-200 ' : ''}`} >Questions</div>
         <div className={`text-lg font-bold rounded-t-xl p-1.5 ${activeSection === 2 ? 'bg-gray-200 ' : ''}`} >Test</div>
         <div className={`text-lg font-bold rounded-t-xl p-1.5 ${activeSection === 3 ? 'bg-gray-200 ' : ''}`} >Setting</div>
       </section>
-      {!activeQuestions && <section className="flex flex-col items-center justify-start h-screen w-full bg-gray-200 p-8">
+      {!activeQuestions && <section className="flex flex-col items-center justify-start h-full w-full bg-gray-200 p-8">
         {groups.map((group) => (
           <div key={group.id} className="flex flex-row items-center justify-between border-2 h-25  min-w-100 border-gray-300 p-6 pl-6 rounded-lg shadow-2xl mb-4">
             <div>
@@ -121,7 +123,15 @@ export default function MainPage() {
               <h4 className="text-xs text-gray-600">Next review at...</h4>
             </div>
 
-            <button className="text-xl font-bold hover:cursor-pointer" onClick={() => deleteGroup(group.id)}>-</button>
+            <button className="text-xl font-bold hover:cursor-pointer" ><svg
+              className="w-6 h-6 text-black hover:cursor-pointer"
+              viewBox="0 0 24 24"
+              fill="none"
+              strokeWidth="2"
+              onClick={() => deleteGroup(group.id)}
+            >
+              <use href={`${sprite}#trash`} />
+            </svg></button>
           </div>
         ))}
         <button className="flex items-center justify-center  border border-gray-400 shadow-2xl  hover:shadow-lg hover:scale-105 transition duration-200  rounded-full text-sm h-10 w-10 hover:cursor-pointer min-w-7 min-h-7 " onClick={() => {
