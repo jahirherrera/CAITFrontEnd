@@ -16,6 +16,7 @@ export default function ShowQues({ groupId }: { groupId: number }) {
 
     const [addQues, setAddQues] = useState<boolean>(false);
     const [wholeQuestion, setWholeQuestion] = useState<string>("");
+    const [wholeExplanation, setWholeExplanation] = useState<string>("");
 
     const [clickImage, setClickImage] = useState<boolean>(false);
     const [imageClicked, setImageClicked] = useState<ImageQuestionResponse | null>(null);
@@ -112,8 +113,11 @@ export default function ShowQues({ groupId }: { groupId: number }) {
         const newQuestion: Question = {
             id: 0,
             description: "",
+            explanation: "",
+            isEnable: true,
             answer: "",
             groupId: groupId,
+
         };
 
         if (wholeQuestion.includes("{") && wholeQuestion.includes("}")) {
@@ -123,16 +127,20 @@ export default function ShowQues({ groupId }: { groupId: number }) {
 
             newQuestion.description = firstPart + "..." + secondPart;
             newQuestion.answer = answer;
+            newQuestion.explanation = wholeExplanation;
 
         } else if (wholeQuestion.includes("?")) {
             const firstPart = wholeQuestion.substring(0, wholeQuestion.indexOf("?"));
             const answer = wholeQuestion.substring(wholeQuestion.indexOf("?") + 1);
             newQuestion.description = firstPart + "?";
             newQuestion.answer = answer;
+            newQuestion.explanation = wholeExplanation;
 
         } else {
             setAlert("Question must contain either '{ }' or '?' to indicate the answer.");
         }
+
+        console.log("Adding question:", newQuestion);
 
 
         try {
@@ -165,6 +173,7 @@ export default function ShowQues({ groupId }: { groupId: number }) {
         }
 
         const formData = new FormData();
+        formData.append("id", "0");
         formData.append("file", file);
         formData.append("groupId", groupId.toString());
 
@@ -318,6 +327,10 @@ export default function ShowQues({ groupId }: { groupId: number }) {
                             <div className="flex flex-col items-center justify-center gap-1">
                                 <h2 className="text-xl font-bold mb-2">Question</h2>
                                 <textarea placeholder="" className="border border-gray-300 rounded p-2 w-80  max-h-23 min-h-11" value={wholeQuestion} onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setWholeQuestion(e.target.value)} />
+                            </div>
+                            <div className="flex flex-col items-center justify-center gap-1">
+                                <h2 className="text-xl font-bold mb-2">Explanation</h2>
+                                <input placeholder="" className="border border-gray-300 rounded p-2 w-80  max-h-23 min-h-11" value={wholeExplanation} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setWholeExplanation(e.target.value)} />
                             </div>
                             <h1 className="min-h-5 text-sm text-red-500">{alert}</h1>
                             <div className="flex flex-row items-center justify-center gap-4">

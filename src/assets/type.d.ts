@@ -9,13 +9,17 @@ export interface Group {
 }
 
 export interface GroupDetails {
+    id: number | null;
     name: string;
-    user_username : string;
+    nextReview: string | null;
+    username : string;
 }
 
 export interface Question {
     id: number | null;
     description: string;
+    explanation: string;
+    isEnable: boolean;
     answer: string;
     groupId: number;
 }
@@ -43,7 +47,7 @@ export interface rectangleDTO{
     y: number;
     width: number;
     height: number;
-    id_image: number;
+    imageId: number;
 }
 
 

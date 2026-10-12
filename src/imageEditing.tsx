@@ -134,7 +134,7 @@ export default function ImageEditing({ image }: { image: ImageQuestionResponse }
 
     const saveRectangles = async () => {
 
-        if(rectData==null) return;
+        if(rectData.length === 0) return;
 
         const rect: rectangleDTO[] = [];
 
@@ -145,10 +145,12 @@ export default function ImageEditing({ image }: { image: ImageQuestionResponse }
                 y: rectangles.y,
                 width: rectangles.width,
                 height: rectangles.height,
-                id_image: image.id
+                imageId: image.id
             }
             rect.push(newRectangle)
         }
+
+        
 
         try {
             const response = await fetch(`http://localhost:8080/rectangle`, {
