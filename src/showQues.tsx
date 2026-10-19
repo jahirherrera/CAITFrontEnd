@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import type { Question, ImageQuestion, ImageQuestionResponse } from "./assets/type";
+import type { Question, ImageQuestion, ImageQuestionResponse, questionDTO, answerDTO, addingQuesitonAnwser } from "./assets/type";
 import ImageEditing from './imageEditing.tsx'
 //@ts-ignore
 import sprite from './assets/sprite.svg';
@@ -105,20 +105,23 @@ export default function ShowQues({ groupId }: { groupId: number }) {
             return;
         }
 
-        if (!wholeQuestion.includes("{") && !wholeQuestion.includes("?")) {
+        if (!wholeQuestion.includes("{") && !wholeQuestion.includes("?") && !wholeQuestion.includes("|")) {
             setAlert("Question must contain either '{...}' or '?' to indicate the answer.");
             return;
         }
 
-        const newQuestion: Question = {
+        const newQuestion: questionDTO = {
             id: 0,
             description: "",
             explanation: "",
             isEnable: true,
-            answer: "",
-            groupId: groupId,
+            points: 0
 
         };
+
+        const answers: answerDTO[] = [];
+
+        
 
         if (wholeQuestion.includes("{") && wholeQuestion.includes("}")) {
             const firstPart = wholeQuestion.substring(0, wholeQuestion.indexOf("{"));
@@ -126,21 +129,41 @@ export default function ShowQues({ groupId }: { groupId: number }) {
             const answer = wholeQuestion.substring(wholeQuestion.indexOf("{") + 1, wholeQuestion.indexOf("}"));
 
             newQuestion.description = firstPart + "..." + secondPart;
-            newQuestion.answer = answer;
+            answers.push({ id: 0, description: answer, isCorrect: true })
             newQuestion.explanation = wholeExplanation;
+
+        } else if (wholeQuestion.includes("|")) {
+            
+            newQuestion.explanation = wholeExplanation;
+            const parts = wholeQuestion.split('|');
+            newQuestion.description = parts[0];
+
+            for (let i = 1; i < parts.length; i++) {
+                if (i === 1) {
+                    answers.push({ id: i, description: parts[i], isCorrect: true })
+                } else {
+                    answers.push({ id: i, description: parts[i], isCorrect: false })
+                }
+            }
 
         } else if (wholeQuestion.includes("?")) {
             const firstPart = wholeQuestion.substring(0, wholeQuestion.indexOf("?"));
             const answer = wholeQuestion.substring(wholeQuestion.indexOf("?") + 1);
             newQuestion.description = firstPart + "?";
-            newQuestion.answer = answer;
+            answers.push({ id: 0, description: answer, isCorrect: true })
             newQuestion.explanation = wholeExplanation;
 
         } else {
-            setAlert("Question must contain either '{ }' or '?' to indicate the answer.");
+            setAlert("Question must contain either '{ }', '?', or '|' to indicate the answer.");
+            return;
         }
 
-        console.log("Adding question:", newQuestion);
+        const adding: addingQuesitonAnwser = {
+            groupId: groupId,
+            questionDTO: newQuestion,
+            answerDTO: answers
+        }
+        console.log("Adding question:", adding);
 
 
         try {
@@ -150,7 +173,7 @@ export default function ShowQues({ groupId }: { groupId: number }) {
                 headers: {
                     "Content-Type": "application/json"
                 },
-                body: JSON.stringify(newQuestion)
+                body: JSON.stringify(adding)
             });
             if (!response.ok) {
                 throw new Error("Could not add question.");
@@ -159,6 +182,7 @@ export default function ShowQues({ groupId }: { groupId: number }) {
             setAlert("");
             setWholeQuestion("");
             getQuestions();
+            setWholeExplanation("");
         }
         catch (error) {
             console.error("Adding question failed", error);
@@ -263,38 +287,78 @@ export default function ShowQues({ groupId }: { groupId: number }) {
 
     }, [imageClicked]);
 
+    const phrase = (points: number) => {
+        switch (points) {
+            case 0:
+            case 1:
+                return " Nailed It!";
+            case 2:
+            case 3:
+                return " Getting There";
+            case 4:
+            case 5:
+                return "Focus Area";
+            default:
+                return "";
+        }
+    }
+
+    const color = (points: number) => {
+        switch (points) {
+            case 0:
+            case 1:
+                return "text-green-500";
+            case 2:
+            case 3:
+                return "text-yellow-500";
+            case 4:
+            case 5:
+                return "text-red-500";
+            default:
+                return "";
+        }
+    }
+
     return (
         <>
             {
-                !clickImage && <div className="flex flex-col items-center justify-start h-auto w-full bg-gray-200 p-15">
+                !clickImage && <div className="flex flex-col items-center justify-start h-auto w-full  p-15">
                     {questions.map((question) => (
                         <div key={question.id} className="flex flex-row items-start justify-between border-2 h-auto  w-[50vw] border-gray-300 p-6 pl-6 rounded-lg shadow-2xl mb-4 hover:cursor-pointer">
 
                             <div>
                                 <h3 className="text-2xl ">{question.description}</h3>
                                 <p className="text-xl text-gray-600">{question.answer}</p>
+                                <p className={`text-lg ${color(question.points)}`}>{phrase(question.points)}</p>
                             </div>
-                            <button className="  pl-3 ml-2 border-l"><svg
-                                className="w-6 h-6 text-black hover:cursor-pointer"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                strokeWidth="2"
-                                onClick={() => deleteQuestion(question.id)}
-                            >
-                                <use href={`${sprite}#trash`} />
-                            </svg></button>
+                            <button className="  pl-3 ml-2 border-l">
+                                <svg
+                                    className="w-6 h-6 text-black hover:cursor-pointer"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    strokeWidth="2"
+                                    onClick={() => deleteQuestion(question.id)}
+                                >
+                                    <use href={`${sprite}#trash`} />
+                                </svg>
+                            </button>
                         </div>
 
                     ))}
                     {imageQuestions.map((imageQuestion) => (
-                        <img
-                            key={imageQuestion.id}
-                            src={imageQuestion.url}
-                            alt="Question illustration"
-                            className="w-[50vw] h-auto object-cover border border-gray-300 rounded-lg shadow-2xl mb-4 hover:cursor-pointer"
-                            onClick={() => clickingImage(imageQuestion)}
-                            onContextMenu={(e) => { e.preventDefault(); deleteImage(imageQuestion.id) }}
-                        />
+                        <div key={imageQuestion.id} className="flex flex-col items-center rounded-lg shadow-2xl mb-4 hover:cursor-pointer">
+                            <img
+                                key={imageQuestion.id}
+                                src={imageQuestion.url}
+                                alt="Question illustration"
+                                className="w-[50vw] h-auto object-cover border border-gray-300 rounded-lg  mb-1 hover:cursor-pointer"
+                                onClick={() => clickingImage(imageQuestion)}
+                                onContextMenu={(e) => { e.preventDefault(); deleteImage(imageQuestion.id) }}
+                            />
+                            <p className={`mb-3 text-lg ${color(imageQuestion.points)}`}>{phrase(imageQuestion.points)}</p>
+                        </div>
+
+
                     ))}
 
                     <button className="flex items-center justify-center  border border-gray-400 shadow-2xl  hover:shadow-lg hover:scale-105 transition duration-200  rounded-full text-sm h-10 w-10 hover:cursor-pointer min-w-7 min-h-7 "
@@ -335,7 +399,7 @@ export default function ShowQues({ groupId }: { groupId: number }) {
                             <h1 className="min-h-5 text-sm text-red-500">{alert}</h1>
                             <div className="flex flex-row items-center justify-center gap-4">
                                 <button className="bg-blue-500 text-white py-1 px-2 rounded" onClick={wholeQuestionHandler}>Save</button>
-                                <button className="bg-red-500 text-white py-1 px-2 rounded" onClick={() => { setAddQues(false); setAlert(""); setWholeQuestion(""); }}>Cancel</button>
+                                <button className="bg-red-500 text-white py-1 px-2 rounded" onClick={() => { setAddQues(false); setAlert(""); setWholeQuestion("");setWholeExplanation("") }}>Cancel</button>
                             </div>
                         </div>
                     </div>

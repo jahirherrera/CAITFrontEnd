@@ -5,9 +5,14 @@ import ShowQues from './showQues.tsx';
 //@ts-ignore
 import sprite from './assets/sprite.svg';
 
+import bgImage from './assets/bg.png';
+import { useNavigate } from 'react-router-dom';
+
 
 
 export default function MainPage() {
+
+  const navigate = useNavigate();
 
   const [groups, setGroups] = useState<Group[]>([]);
   const [addGroup, setAddGroup] = useState<boolean>(false);
@@ -16,10 +21,10 @@ export default function MainPage() {
 
   const [selectedGroupId, setSelectedGroupId] = useState<number>(0);
   const [activeQuestions, setActiveQuestions] = useState<boolean>(false);
-  
+
 
   const [activeReview, setActiveReview] = useState<boolean>(false);
-  
+
 
   const [activeSection, setActiveSection] = useState<number>(0);
   const username = localStorage.getItem("username");
@@ -27,7 +32,11 @@ export default function MainPage() {
     if (username) {
       getGroups();
     }
+
+
   }, []);
+
+
 
   const addNewGroup = async () => {
     const groupDetails: GroupDetails = {
@@ -106,26 +115,27 @@ export default function MainPage() {
   }
 
   useEffect(() => {
-    if (selectedGroupId !== 0) {
+    if (selectedGroupId !== 0 && !activeReview) {
       setActiveSection(1);
       setActiveQuestions(true);
     }
   }, [selectedGroupId]);
 
   return (
-    <div className="grid grid-rows-[1fr_11fr] h-screen w-full ">
-      <section className="flex flex-row  items-end gap-5 justify-center h-auto w-full bg-white mt-5">
-        <div className={`text-lg font-bold  p-1.5 rounded-t-xl ${activeSection === 0 ? 'bg-gray-200' : ''}`} onClick={() => { setActiveSection(0); setActiveQuestions(false); setSelectedGroupId(0); }} >Group</div>
-        <div className={`text-lg font-bold rounded-t-xl p-1.5 ${activeSection === 1 ? 'bg-gray-200 ' : ''}`} >Questions</div>
-        <div className={`text-lg font-bold rounded-t-xl p-1.5 ${activeSection === 2 ? 'bg-gray-200 ' : ''}`} >Review</div>
-        <div className={`text-lg font-bold rounded-t-xl p-1.5 ${activeSection === 3 ? 'bg-gray-200 ' : ''}`} >Test</div>
-        <div className={`text-lg font-bold rounded-t-xl p-1.5 ${activeSection === 4 ? 'bg-gray-200 ' : ''}`} >Setting</div>
+    <div className="grid grid-rows-[1fr_11fr] h-screen w-full bg-cover bg-center overflow-scroll"
+      style={{ backgroundImage: `url(${bgImage})` }}>
+      <section className="flex flex-row  items-end gap-5 justify-center h-auto w-full  mt-5">
+        <div className={`text-lg font-bold  p-1.5 rounded-xl ${activeSection === 0 ? 'bg-gray-200' : ''}`} onClick={() => { setActiveSection(0); setActiveQuestions(false); setSelectedGroupId(0); setActiveReview(false); }} >Group</div>
+        <div className={`text-lg font-bold rounded-xl p-1.5 ${activeSection === 1 ? 'bg-gray-200 ' : ''}`} >Questions</div>
+        <div className={`text-lg font-bold rounded-xl p-1.5 ${activeSection === 2 ? 'bg-gray-200 ' : ''}`} >Review</div>
+        <div className={`text-lg font-bold rounded-xl p-1.5 ${activeSection === 3 ? 'bg-gray-200 ' : ''}`} >Test</div>
+        <div className={`text-lg font-bold rounded-xl p-1.5 ${activeSection === 4 ? 'bg-gray-200 ' : ''}`} >Setting</div>
       </section>
-      {!activeQuestions && !activeReview && <section className="flex flex-col items-center justify-start h-full w-full bg-gray-200 p-8">
+      {(!activeQuestions && !activeReview) && <section className="flex flex-col items-center justify-start h-full w-full p-8">
         {groups.map((group) => (
-          <div key={group.id} className="flex flex-row items-center justify-between border-2 h-25  min-w-100 border-gray-300 p-6 pl-6 rounded-lg shadow-2xl mb-4">
+          <div key={group.id} className="flex flex-row items-center justify-between border-2 h-25 min-w-150  border-gray-300 p-6 pl-6 rounded-lg shadow-2xl mb-4">
             <div>
-              <h2 className="text-xl font-bold mb-2 hover:cursor-pointer" onClick={() => goToQuestions(group.id)}>
+              <h2 className="text-xl font-bold mb-2 hover:cursor-pointer " onClick={() => goToQuestions(group.id)}>
                 {group.name}
                 <button className="ml-1">
                   <svg
@@ -141,7 +151,9 @@ export default function MainPage() {
               <h4 className="text-xs text-gray-600">Next review at...</h4>
             </div>
             <div className="flex flex-row items-center justify-center gap-2">
-              <button className="flex items-center gap-1 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 hover:cursor-pointer" onClick={() => { setActiveReview(true); setSelectedGroupId(group.id); setActiveSection(2);  }}>
+              <button className="flex items-center gap-1 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 hover:cursor-pointer" onClick={() => {
+                setActiveReview(true); setSelectedGroupId(group.id); setActiveSection(2);
+              }}>
                 <svg
                   className="w-5 h-5 text-white hover:cursor-pointer"
                   viewBox="0 0 24 24"
@@ -152,10 +164,22 @@ export default function MainPage() {
                 </svg>
                 Review
               </button>
-              
-              <button className="flex items-center gap-1 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-700 hover:cursor-pointer" >
+
+              <button className="flex items-center gap-1 bg-green-500 text-white px-4 py-2 rounded hover:bg-green-700 hover:cursor-pointer" onClick={() => navigate(`/test/${group.id}`)}>
                 <svg
                   className="w-6 h-6 text-white hover:cursor-pointer"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  strokeWidth="2"
+                  onClick={() => deleteGroup(group.id)}
+                >
+                  <use href={`${sprite}#test`} />
+                </svg>
+                Test
+              </button>
+              <button className="flex items-center gap-1 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-700 hover:cursor-pointer" >
+                <svg
+                  className="w-5 h-5 text-white hover:cursor-pointer"
                   viewBox="0 0 24 24"
                   fill="none"
                   strokeWidth="2"
@@ -166,6 +190,7 @@ export default function MainPage() {
                 Delete
               </button>
             </div>
+
 
           </div>
         ))}
